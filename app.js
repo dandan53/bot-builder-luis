@@ -41,7 +41,7 @@ bot.dialog('/', [
                 .then(function (result) {
                     console.log("luisHelper result: " + result);
                     result = JSON.parse(result);
-                    session.openTrade = {};
+                    session.userData.openTrade = {};
                     // parse the response
                     if (result && result.topScoringIntent){
                         var intent = result.topScoringIntent.intent;
@@ -51,44 +51,44 @@ bot.dialog('/', [
                                 var BuyOrSell = getEntityByType("BuyOrSell", result.entities);
                                 if (BuyOrSell){
                                     console.log("BuyOrSell: " + JSON.stringify(BuyOrSell));
-                                    session.openTrade.BuyOrSell = BuyOrSell.entity;
-                                    console.log("session.openTrade.BuyOrSell: " + session.openTrade.BuyOrSell);
+                                    session.userData.openTrade.BuyOrSell = BuyOrSell.entity;
+                                    console.log("session.userData.openTrade.BuyOrSell: " + session.userData.openTrade.BuyOrSell);
                                 }
                                 var Instrument = getEntityByType("Instrument", result.entities);
                                 if (Instrument){
                                     console.log("Instrument: " + JSON.stringify(Instrument));
-                                    session.openTrade.Instrument = Instrument.entity;
-                                    console.log("session.openTrade.Instrument: " + session.openTrade.Instrument);
+                                    session.userData.openTrade.Instrument = Instrument.entity;
+                                    console.log("session.userData.openTrade.Instrument: " + session.userData.openTrade.Instrument);
 
                                 }
                                 var Price = getEntityByType("Price", result.entities);
                                 if (Price){
                                     console.log("Price: " + JSON.stringify(Price));
-                                    session.openTrade.Price = Price.entity;
-                                    console.log("session.openTrade.Price: " + session.openTrade.Price);
+                                    session.userData.openTrade.Price = Price.entity;
+                                    console.log("session.userData.openTrade.Price: " + session.userData.openTrade.Price);
 
                                 }
                             }
 
-                            console.log("session.openTrade: " + JSON.stringify(session.openTrade));
+                            console.log("session.userData.openTrade: " + JSON.stringify(session.userData.openTrade));
 
                             // if entity doesn't exist try to find the word
-                            if (!session.openTrade.BuyOrSell ||
-                                (session.openTrade.BuyOrSell != 'sell' &&
-                                session.openTrade.BuyOrSell != 'buy')
+                            if (!session.userData.openTrade.BuyOrSell ||
+                                (session.userData.openTrade.BuyOrSell != 'sell' &&
+                                session.userData.openTrade.BuyOrSell != 'buy')
                                 )
                             {
-                                session.openTrade.BuyOrSell = null;
+                                session.userData.openTrade.BuyOrSell = null;
 
                                 var isSell = text.includes("sell");
                                 if (isSell)
                                 {
-                                    session.openTrade.BuyOrSell = 'sell';
+                                    session.userData.openTrade.BuyOrSell = 'sell';
                                 }
                                 else {
                                     var isBuy = text.includes("buy");
                                     if (isSell) {
-                                        session.openTrade.BuyOrSell = 'buy';
+                                        session.userData.openTrade.BuyOrSell = 'buy';
                                     }
                                 }
                             }
@@ -127,10 +127,10 @@ bot.dialog('/openTradeNoBuyOrSell', [
     function (session, results) {
         switch (results.repsonse.entity) {
             case "Buy":
-                session.openTrade.BuyOrSell = "buy";
+                session.userData.openTrade.BuyOrSell = "buy";
                 break;
             case "Sell":
-                session.openTrade.BuyOrSell = "sell";
+                session.userData.openTrade.BuyOrSell = "sell";
                 break;
             default:
                 session.replaceDialog("/openTradeNoBuyOrSell");
@@ -146,7 +146,7 @@ bot.dialog('/openTradeNoInstrument', [
         builder.Prompts.text(session, 'Which instrument would you like to invest?');
     },
     function (session, results) {
-        session.openTrade.Instrument = results.response;
+        session.userData.openTrade.Instrument = results.response;
         dialogRouter(session);
     }
 ]);
@@ -156,7 +156,7 @@ bot.dialog('/openTradeNoPrice', [
         builder.Prompts.number(session, 'What is the amount you would like to invest?');
     },
     function (session, results) {
-        session.openTrade.Price = results.response;
+        session.userData.openTrade.Price = results.response;
         dialogRouter(session);
     }
 ]);
@@ -164,14 +164,14 @@ bot.dialog('/openTradeNoPrice', [
 bot.dialog('/openTradeFull', [
     function (session)
     {
-         if (session.openTrade &&
-            session.openTrade.BuyOrSell &&
-            session.openTrade.Instrument &&
-            session.openTrade.Price)
+         if (session.userData.openTrade &&
+            session.userData.openTrade.BuyOrSell &&
+            session.userData.openTrade.Instrument &&
+            session.userData.openTrade.Price)
             {
-                var buyOrSell = session.openTrade.BuyOrSell;
-                var instrument = session.openTrade.Instrument;
-                var price = session.openTrade.Price;
+                var buyOrSell = session.userData.openTrade.BuyOrSell;
+                var instrument = session.userData.openTrade.Instrument;
+                var price = session.userData.openTrade.Price;
                 var message = buyOrSell + " position of " + instrument + " was opened in " + price +"$";
                 session.send(message);
             }
@@ -184,32 +184,32 @@ bot.dialog('/openTradeFull', [
 
 var dialogRouter = function (session) {
 
-    if (!session.openTrade || (
-        !session.openTrade.BuyOrSell &&
-        !session.openTrade.Instrument &&
-        !session.openTrade.Price))
+    if (!session.userData.openTrade || (
+        !session.userData.openTrade.BuyOrSell &&
+        !session.userData.openTrade.Instrument &&
+        !session.userData.openTrade.Price))
     {
         session.replaceDialog('/openTradeEmpty');
     }
-    else if (session.openTrade &&
-        !session.openTrade.BuyOrSell)
+    else if (session.userData.openTrade &&
+        !session.userData.openTrade.BuyOrSell)
     {
         session.replaceDialog('/openTradeNoBuyOrSell');
     }
-    else if (session.openTrade &&
-        !session.openTrade.Instrument)
+    else if (session.userData.openTrade &&
+        !session.userData.openTrade.Instrument)
     {
         session.replaceDialog('/openTradeNoInstrument');
     }
-    else if (session.openTrade &&
-        !session.openTrade.Price)
+    else if (session.userData.openTrade &&
+        !session.userData.openTrade.Price)
     {
         session.replaceDialog('/openTradeNoPrice');
     }
-    else if (session.openTrade &&
-        session.openTrade.BuyOrSell &&
-        session.openTrade.Instrument &&
-        session.openTrade.Price)
+    else if (session.userData.openTrade &&
+        session.userData.openTrade.BuyOrSell &&
+        session.userData.openTrade.Instrument &&
+        session.userData.openTrade.Price)
     {
         session.replaceDialog('/openTradeFull');
     }
