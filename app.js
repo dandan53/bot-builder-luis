@@ -33,7 +33,6 @@ bot.dialog('/', [
 
     },
     function (session, results) {
-
         // call LUIS
         if (results.response)
         {
@@ -42,7 +41,7 @@ bot.dialog('/', [
                 .then(function (result) {
                     console.log("luisHelper result: " + result);
                     result = JSON.parse(result);
-                    session.dialogData.openTrade = {};
+                    session.openTrade = {};
                     // parse the response
                     if (result && result.topScoringIntent){
                         var intent = result.topScoringIntent.intent;
@@ -52,57 +51,64 @@ bot.dialog('/', [
                                 var BuyOrSell = getEntityByType("BuyOrSell", result.entities);
                                 if (BuyOrSell){
                                     console.log("BuyOrSell: " + JSON.stringify(BuyOrSell));
-                                    session.dialogData.openTrade.BuyOrSell = BuyOrSell.entity;
-                                    console.log("session.dialogData.openTrade.BuyOrSell: " + session.dialogData.openTrade.BuyOrSell);
+                                    session.openTrade.BuyOrSell = BuyOrSell.entity;
+                                    console.log("session.openTrade.BuyOrSell: " + session.openTrade.BuyOrSell);
                                 }
                                 var Instrument = getEntityByType("Instrument", result.entities);
                                 if (Instrument){
                                     console.log("Instrument: " + JSON.stringify(Instrument));
-                                    session.dialogData.openTrade.Instrument = Instrument.entity;
-                                    console.log("session.dialogData.openTrade.Instrument: " + session.dialogData.openTrade.Instrument);
+                                    session.openTrade.Instrument = Instrument.entity;
+                                    console.log("session.openTrade.Instrument: " + session.openTrade.Instrument);
 
                                 }
                                 var Price = getEntityByType("Price", result.entities);
                                 if (Price){
                                     console.log("Price: " + JSON.stringify(Price));
-                                    session.dialogData.openTrade.Price = Price.entity;
-                                    console.log("session.dialogData.openTrade.Price: " + session.dialogData.openTrade.Price);
+                                    session.openTrade.Price = Price.entity;
+                                    console.log("session.openTrade.Price: " + session.openTrade.Price);
 
                                 }
                             }
 
-                            console.log("session.dialogData.openTrade: " + JSON.stringify(session.dialogData.openTrade));
+                            console.log("session.openTrade: " + JSON.stringify(session.openTrade));
 
                             // if entity doesn't exist try to find the word
-                            if (!session.dialogData.openTrade.BuyOrSell ||
-                                (session.dialogData.openTrade.BuyOrSell != 'sell' &&
-                                session.dialogData.openTrade.BuyOrSell != 'buy')
+                            if (!session.openTrade.BuyOrSell ||
+                                (session.openTrade.BuyOrSell != 'sell' &&
+                                session.openTrade.BuyOrSell != 'buy')
                                 )
                             {
                                 var isSell = text.includes("sell");
                                 if (isSell)
                                 {
-                                    session.dialogData.openTrade.BuyOrSell = 'sell';
+                                    session.openTrade.BuyOrSell = 'sell';
                                 }
                                 else {
                                     var isBuy = text.includes("buy");
                                     if (isSell) {
-                                        session.dialogData.openTrade.BuyOrSell = 'buy';
+                                        session.openTrade.BuyOrSell = 'buy';
                                     }
                                 }
                             }
+
+                            session.replaceDialog("/openTradeFull");
                         }
                         else
                         {
-                            //session.beginDialog('/openTrade', session.userData.openTrade);
+                            session.replaceDialog("/openTradeEmpty");
                         }
                     }
                 }, function (err) {
                     throw error;
                 });
         }
+        else
+        {
+            session.replaceDialog("/openTradeEmpty");
+        }
 
-        session.replaceDialog("/room1");
+        session.replaceDialog("/openTradeEmpty");
+
         /*
         switch (results.repsonse.entity) {
             case "north":
@@ -114,6 +120,35 @@ bot.dialog('/', [
         }*/
     }
 ]);
+
+bot.dialog('/openTradeEmpty', [
+    function (session) {
+        session.send('All details are missing. Please write again');
+        session.replaceDialog("/");
+    }
+]);
+
+bot.dialog('/openTradeFull', [
+    function (session)
+    {
+         if (session.openTrade &&
+            session.openTrade.BuyOrSell &&
+            session.openTrade.Instrument &&
+            session.openTrade.Price)
+            {
+                var buyOrSell = session.openTrade.BuyOrSell;
+                var instrument = session.openTrade.Instrument;
+                var price = session.openTrade.Price;
+                var message = buyOrSell + " position of " + instrument + " was opened in " + price +"$";
+                session.send(message);
+            }
+            else
+             {
+                 session.send("missing some info");
+             }
+    }
+]);
+
 bot.dialog('/room1', [
     function (session) {
         session.send("room1");
