@@ -1,6 +1,11 @@
 var restify = require('restify');
 var builder = require('botbuilder');
 
+var luisHelper =  require("./src/luisHelper.js");
+var instrumentsHelper =  require("./src/instrumentsHelper.js");
+
+var instruments = "";
+
 //=========================================================
 // Bot Setup
 //=========================================================
@@ -9,6 +14,8 @@ var builder = require('botbuilder');
 var server = restify.createServer();
 server.listen(process.env.port || process.env.PORT || 3978, function () {
     console.log('%s listening to %s', server.name, server.url);
+
+    init();
 });
 
 // Create chat bot
@@ -19,11 +26,21 @@ var connector = new builder.ChatConnector({
 var bot = new builder.UniversalBot(connector);
 server.post('/api/messages', connector.listen());
 
+// init
+var init = function(){
+    instrumentsHelper.getInstruments()
+        .then(function (result) {
+            console.log("instrumentsHelper result: " + result);
+            instruments = result.toLowerCase();
+        }, function (err) {
+            throw error;
+        });
+};
+
 //=========================================================
 // Bots Dialogs
 //=========================================================
 
-var luisHelper =  require("./src/luisHelper.js");
 
 bot.dialog('/', [
     function (session) {
@@ -66,7 +83,6 @@ bot.dialog('/', [
                                     console.log("Price: " + JSON.stringify(Price));
                                     session.userData.openTrade.Price = Price.entity;
                                     console.log("session.userData.openTrade.Price: " + session.userData.openTrade.Price);
-
                                 }
                             }
 
@@ -146,7 +162,13 @@ bot.dialog('/openTradeNoInstrument', [
         builder.Prompts.text(session, 'Which instrument would you like to invest?');
     },
     function (session, results) {
-        session.userData.openTrade.Instrument = results.response;
+
+        var isValidInstrument = instruments.includes(results.response.toLowerCase());
+        if (isValidInstrument)
+        {
+            session.userData.openTrade.Instrument = results.response;
+        }
+
         dialogRouter(session);
     }
 ]);

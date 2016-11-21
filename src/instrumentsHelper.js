@@ -1,22 +1,17 @@
 var request = require('request-promise');
 var Promise = require('bluebird');
 
-var url = "https://api.projectoxford.ai/luis/v2.0/apps/9d89f089-82ec-41a7-9587-e60db39b9ef5?subscription-key=e0ceba08eaa449c7af57369a47062469&q=";
+var url = "https://api.etorostatic.com/sapi/instrumentsmetadata/V1.1/instruments";
 
-exports.callLuis = function (text, threashold) {
-    if (threashold === void 0) { threashold = 0; }
+exports.getInstruments = function () {
     return new Promise(function (resolve, reject) {
-        return request(url + encodeURIComponent(text))
+        return request(url)
             .then(function (result) {
                 var json = JSON.parse(result);
-                console.log("luisHelper json: " + json);
-                console.log("luisHelper result: " +result);
+                console.log("instrumentsHelper json: " + json);
+                console.log("instrumentsHelper result: " + result);
 
-                if (!json || !json.topScoringIntent){
-                    return resolve();
-                }
-
-                if (json.topScoringIntent.score < threashold){
+                if (!json){
                     return resolve();
                 }
 
