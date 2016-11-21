@@ -78,6 +78,8 @@ bot.dialog('/', [
                                 session.openTrade.BuyOrSell != 'buy')
                                 )
                             {
+                                session.openTrade.BuyOrSell = null;
+
                                 var isSell = text.includes("sell");
                                 if (isSell)
                                 {
@@ -90,12 +92,12 @@ bot.dialog('/', [
                                     }
                                 }
                             }
-
-                            session.replaceDialog("/openTradeFull");
+                            ////// router ///////
+                            dialogRouter(session);
                         }
                         else
                         {
-                            session.replaceDialog("/openTradeEmpty");
+                            session.replaceDialog('/openTradeNoBuyOrSell');
                         }
                     }
                 }, function (err) {
@@ -104,20 +106,10 @@ bot.dialog('/', [
         }
         else
         {
-            session.replaceDialog("/openTradeEmpty");
+            session.replaceDialog('/openTradeEmpty');
         }
 
-        session.replaceDialog("/openTradeEmpty");
-
-        /*
-        switch (results.repsonse.entity) {
-            case "north":
-                session.replaceDialog("/room1");
-                break;
-            default:
-                session.replaceDialog("/");
-                break;
-        }*/
+       // session.replaceDialog('/openTradeEmpty');
     }
 ]);
 
@@ -125,6 +117,47 @@ bot.dialog('/openTradeEmpty', [
     function (session) {
         session.send('All details are missing. Please write again');
         session.replaceDialog("/");
+    }
+]);
+
+bot.dialog('/openTradeNoBuyOrSell', [
+    function (session) {
+        builder.Prompts.choice(session, "Would you like to buy or sell?", ["Buy", "Sell"]);
+    },
+    function (session, results) {
+        switch (results.repsonse.entity) {
+            case "Buy":
+                session.openTrade.BuyOrSell = "buy";
+                break;
+            case "Sell":
+                session.openTrade.BuyOrSell = "sell";
+                break;
+            default:
+                session.replaceDialog("/openTradeNoBuyOrSell");
+                break;
+        }
+
+        dialogRouter(session);
+    }
+]);
+
+bot.dialog('/openTradeNoInstrument', [
+    function (session) {
+        builder.Prompts.text(session, 'Which instrument would you like to invest?');
+    },
+    function (session, results) {
+        session.openTrade.Instrument = results.response;
+        dialogRouter(session);
+    }
+]);
+
+bot.dialog('/openTradeNoPrice', [
+    function (session) {
+        builder.Prompts.number(session, 'What is the amount you would like to invest?');
+    },
+    function (session, results) {
+        session.openTrade.Price = results.response;
+        dialogRouter(session);
     }
 ]);
 
@@ -149,53 +182,46 @@ bot.dialog('/openTradeFull', [
     }
 ]);
 
-bot.dialog('/room1', [
-    function (session) {
-        session.send("room1");
+var dialogRouter = function (session) {
 
-        builder.Prompts.choice(session, "command?", ["open gate", "south", "west", "look"]);
-    },
-    function (session, results) {
-        switch (results.repsonse.entity) {
-            case "open gate":
-                session.replaceDialog("/room2");
-                break;
-            case "south":
-                session.replaceDialog("/");
-                break;
-            case "west":
-                session.replaceDialog("/room3");
-                break;
-            default:
-                session.replaceDialog("/room1");
-                break;
-        }
+    if (!session.openTrade || (
+        !session.openTrade.BuyOrSell &&
+        !session.openTrade.Instrument &&
+        !session.openTrade.Price))
+    {
+        session.replaceDialog('/openTradeEmpty');
+        return;
     }
-]);
 
-bot.dialog('/room2', [
-    function (session) {
-        session.send("room2");
-
-        builder.Prompts.choice(session, "command?", ["open gate", "south", "west", "look"]);
-    },
-    function (session, results) {
-        switch (results.repsonse.entity) {
-            case "open gate":
-                session.replaceDialog("/room2");
-                break;
-            case "south":
-                session.replaceDialog("/");
-                break;
-            case "west":
-                session.replaceDialog("/room3");
-                break;
-            default:
-                session.replaceDialog("/room1");
-                break;
-        }
+    if (session.openTrade &&
+        !session.openTrade.BuyOrSell)
+    {
+        session.replaceDialog('/openTradeNoBuyOrSell');
+        return;
     }
-]);
+
+    if (session.openTrade &&
+        !session.openTrade.Instrument)
+    {
+        session.replaceDialog('/openTradeNoInstrument');
+    }
+
+    if (session.openTrade &&
+        !session.openTrade.Price)
+    {
+        session.replaceDialog('/openTradeNoPrice');
+    }
+
+    if (session.openTrade &&
+        session.openTrade.BuyOrSell &&
+        session.openTrade.Instrument &&
+        session.openTrade.Price)
+    {
+        session.replaceDialog('/openTradeFull');
+        return;
+    }
+};
+
 
 var getEntityByType = function (type, entities) {
     var retVal = null;
