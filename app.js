@@ -190,35 +190,28 @@ var dialogRouter = function (session) {
         !session.openTrade.Price))
     {
         session.replaceDialog('/openTradeEmpty');
-        return;
     }
-
-    if (session.openTrade &&
+    else if (session.openTrade &&
         !session.openTrade.BuyOrSell)
     {
         session.replaceDialog('/openTradeNoBuyOrSell');
-        return;
     }
-
-    if (session.openTrade &&
+    else if (session.openTrade &&
         !session.openTrade.Instrument)
     {
         session.replaceDialog('/openTradeNoInstrument');
     }
-
-    if (session.openTrade &&
+    else if (session.openTrade &&
         !session.openTrade.Price)
     {
         session.replaceDialog('/openTradeNoPrice');
     }
-
-    if (session.openTrade &&
+    else if (session.openTrade &&
         session.openTrade.BuyOrSell &&
         session.openTrade.Instrument &&
         session.openTrade.Price)
     {
         session.replaceDialog('/openTradeFull');
-        return;
     }
 };
 
